@@ -1,4 +1,4 @@
-var spin = require('diceroll2019');
+//var spin = require('diceroll2019');
 var express = require('express');
 var bodyParser = require('body-parser');
 var app = express();
@@ -10,6 +10,16 @@ var numbers = new Array();
 var bets = new Array();
 
 var roulette = new Array(37);
+var colorSlot = [{
+    PASSE: {
+        0: 'GREEN', 1: 'RED', 2: 'BLACK', 3: 'RED', 4: 'BLACK', 5: 'RED', 6: 'BLACK', 7: 'RED', 8: 'BLACK', 9: 'RED', 
+        10: 'BLACK', 11: 'BLACK', 12: 'RED', 13: 'BLACK', 14: 'RED', 15: 'BLACK', 16: 'RED', 17: 'BLACK', 18: 'RED'
+    }, 
+    MANQUE: {
+        19: 'RED', 20: 'BLACK', 21: 'RED', 22: 'BLACK', 23: 'RED', 24: 'BLACK', 25: 'RED', 26: 'BLACK', 27: 'RED', 
+        28: 'BLACK', 29: 'BLACK', 30: 'RED', 31: 'BLACK', 32: 'RED', 33: 'BLACK', 34: 'RED', 35: 'BLACK', 36: 'RED'
+    }
+}];
 var red = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 var black = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];
 var passe = new Array(18);
@@ -17,15 +27,6 @@ var manque = new Array(18);
 var bankCredit;
 var spinValue;
 var manqueNumbers = 19;
-var Slot = {
-    GREEN: 'green',
-    RED: 'red',
-    BLACK: 'black',
-    EVEN: 'even',
-    ODD: 'odd',
-    PASSE: 'passe',
-    MANQUE: 'manque'
-}
 
 function game(credit) {
     bankCredit = credit;
@@ -47,6 +48,11 @@ function clearArrays(){
     bets.pop();
 }
 
+function spin(){
+    var spin = Math.floor(Math.random() * 36);
+    return spin;
+}
+
 function reset(pCredit, bCredit){
     playerCredit = pCredit;
     if(bCredit == undefined){
@@ -57,19 +63,17 @@ function reset(pCredit, bCredit){
     return 'Added both player and bank credit';
 }
 
-function betNumbers(number, bet, numberOfBets){
+function betNumbers(number, bet){
     clearArrays();
-    for(var i = 0; i < numberOfBets; i++){
-        numbers.push(number);
-        bets.push(bet);
-    }
+    numbers.push(number);
+    bets.push(bet);
     for (var i=0; i< numbers.length; i++){
         if (playerCredit < bets[i]) {
             return 'Unsufficient Money';
         }
         playerCredit -= bets[i];
         bankCredit += bets[i];
-        spinValue = spin.dicesRoll(1,36);
+        spinValue = spin();
         if (spinValue == numbers[i]){
             if (numbers.length ==1 ) {
                 bankCredit -= bets[i] + (bets[i] * 35);
@@ -93,7 +97,7 @@ function betNumbers(number, bet, numberOfBets){
     return 'Bank win';
 }
 
-function betColor(bet, rouletteSlot){
+function betSlot(bet, rouletteSlot){
     clearArrays();
     if (playerCredit < bet) {
         return 'Unsufficient money';
@@ -102,58 +106,17 @@ function betColor(bet, rouletteSlot){
     }
     playerCredit -= bets[0];
     bankCredit += bets[0];
-    spinValue = spin.dicesRoll(1,36);
+    spinValue = spin();
     for (var i=0; i < red.length; i++) {
-        if ((spinValue == red[i]) && (rouletteSlot == Slot.RED)){ //
+        if (((spinValue == red[i]) && (rouletteSlot == 'RED'))|| ((spinValue == black[i]) && (rouletteSlot == 'BLACK')) || 
+        ((spinValue == passe[i]) && (rouletteSlot == 'PASSE')) || ((spinValue == manque[i]) && (rouletteSlot == 'MANQUE')) ||
+        (((spinValue % 2) == 0) && (rouletteSlot == 'EVEN')) || (((spinValue % 2) != 0) && (rouletteSlot == 'ODD'))){
             bankCredit -= (bets[0] * 2);
             playerCredit += (bets[0] * 2);
-            return playerName + ' win';
-        }
-        if ((spinValue == black[i]) && (rouletteSlot == Slot.BLACK)){
-            bankCredit -= (bets[0] * 2);
-            playerCredit += (bets[0] * 2);
-            return playerName + ' win';
+            return playerName + ' win'
         }
     }
-    return 'Bank win';
-}
-
-function betPasseManque(bet, rouletteSlot){
-    clearArrays();
-    if (playerCredit < bet) {
-        return 'Unsufficient money';
-    } else {
-        bets.push(bet);
-    }
-    playerCredit -= bets[0];
-    bankCredit += bets[0];
-    spinValue = spin.dicesRoll(1,36);
-    for (var i=0; i< passe.length; i++) {
-        if (((spinValue == passe[i]) && (rouletteSlot == Slot.PASSE)) || ((spinValue == manque[i]) && (rouletteSlot == Slot.MANQUE))){
-            bankCredit -= bets[0] + bets[0];
-            playerCredit += (bets[0] + bets[0]);
-            return playerName + ' win';
-        }
-    }
-    return 'Bank win';
-}
-
-function betEvenOdd(bet, rouletteSlot){
-    clearArrays();
-    if (playerCredit < bet) {
-        return 'Unsufficient money';
-    } else {
-        bets.push(bet);
-    }
-    playerCredit -= bets[0];
-    bankCredit += bets[0];
-    spinValue = spin.dicesRoll(1,36);
-    if ((((spinValue % 2) == 0) && (rouletteSlot == Slot.EVEN)) || (((spinValue % 2) != 0) && (rouletteSlot == Slot.ODD))) {
-        bankCredit -= (bets[0] + bets[0]);
-        playerCredit += (bets[0] + bets[0]);
-        return playerName + ' win';
-    }
-    return 'Bank win';
+    return playerName + ' lose';
 }
 
 app.get('/resetGame/:pCredit', function(req, res){
@@ -166,16 +129,16 @@ app.get('/resetGame/:pCredit', function(req, res){
     }
 })
 
-app.get('/betNumbers/:number/:bet/:numberOfBets', function(req,res){
-    if(isNaN(req.params.number) && isNaN(req.params.bet) && isNaN(req.params.numberOfBets)){
+app.get('/betNumbers/:number/:bet', function(req,res){
+    if(isNaN(req.params.number) && isNaN(req.params.bet)){
         res.status(400).json({message: 'Invalid params'});
         return;
     }
     res.json({
-        result: betNumbers(Number(req.params.number), Number(req.params.bet), Number(req.params.numberOfBets)), 
+        result: betNumbers(Number(req.params.number), Number(req.params.bet)), 
         Spin: spinValue,
-        PlayerCredit: playerCredit + ' €', 
-        BankCredit: bankCredit + ' €'
+        PlayerCredit: Number(playerCredit) + ' €', 
+        BankCredit: Number(bankCredit) + ' €'
     });
 })
 
@@ -184,28 +147,13 @@ app.get('/betOnSlot/:bet/:slot', function(req, res){
         res.status(400).json({message: 'Invalid params'});
         return;
     }
-    if(req.params.slot == 'red' || req.params.slot == 'black'){
-        res.json({
-            result: betColor(Number(req.params.bet), req.params.slot),
+    res.json({
+            result: betSlot(Number(req.params.bet), req.params.slot),
             Spin: spinValue,
-            PlayerCredit: playerCredit + ' €', 
-            BankCredit: bankCredit + ' €'
+            colorSlot,
+            PlayerCredit: Number(playerCredit) + ' €', 
+            BankCredit: Number(bankCredit) + ' €'
         });
-    } else if(req.params.slot == 'passe' || req.params.slot == 'manque'){
-        res.json({
-            result: betPasseManque(Number(req.params.bet), req.params.slot),
-            Spin: spinValue,
-            PlayerCredit: playerCredit + ' €', 
-            BankCredit: bankCredit + ' €'
-        });
-    } else if(req.params.slot == 'even' || req.params.slot == 'odd'){
-        res.json({
-            result: betEvenOdd(Number(req.params.bet), req.params.slot),
-            Spin: spinValue,
-            PlayerCredit: playerCredit + ' €', 
-            BankCredit: bankCredit + ' €'
-        });
-    }
-})
+});
 
-app.listen(3001);
+app.listen(3003);
